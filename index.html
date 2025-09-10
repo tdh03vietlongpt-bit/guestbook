@@ -3,116 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <title>Sổ Lời Chúc</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f9f6f2;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-    }
-    h1 {
-      color: #d6336c;
-    }
-    form {
-      margin: 20px auto;
-      max-width: 400px;
-      background: #fff;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    input, textarea, button {
-      width: 100%;
-      margin: 8px 0;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    button {
-      background: #d6336c;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #b52d59;
-    }
-    .message {
-      margin: 10px auto;
-      max-width: 500px;
-      text-align: left;
-      background: #fff;
-      padding: 12px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .message strong {
-      color: #d6336c;
-    }
-    .time {
-      font-size: 12px;
-      color: gray;
-    }
+    body{font-family:Arial,Helvetica,sans-serif;background:#f9f6f2;margin:0;padding:20px;text-align:center}
+    h1{color:#d6336c}
+    form{margin:20px auto;max-width:400px;background:#fff;padding:15px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+    input,textarea,button{width:100%;margin:8px 0;padding:10px;border:1px solid #ccc;border-radius:6px}
+    button{background:#d6336c;color:#fff;font-weight:700;cursor:pointer}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .message{margin:10px auto;max-width:700px;text-align:left;background:#fff;padding:12px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+    .message strong{color:#d6336c}
+    .time{font-size:12px;color:gray;margin-top:6px;display:block}
+    #status{margin-top:8px;color:green}
+    #error{margin-top:8px;color:#c00}
   </style>
 </head>
 <body>
   <h1>💌 Sổ Lời Chúc</h1>
+
   <form id="wishForm">
     <input type="text" id="name" placeholder="Tên của bạn" required>
     <textarea id="message" placeholder="Nhập lời chúc..." rows="3" required></textarea>
-    <button type="submit">Gửi lời chúc</button>
+    <button type="submit" id="sendBtn">Gửi lời chúc</button>
   </form>
+
+  <div id="status"></div>
+  <div id="error"></div>
 
   <h2>Lời chúc đã gửi:</h2>
   <div id="messages">⏳ Đang tải lời chúc...</div>
 
   <script>
-    const scriptURL = "YOUR_SCRIPT_URL"; // 👉 Thay bằng link Apps Script của bạn
-    const form = document.getElementById("wishForm");
-    const messagesDiv = document.getElementById("messages");
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzrwM11GUMPstnx5WJ-gPjS-Ls8CSZosndewnfX0iu_L8OGH7Ymp307XB9S0LOT1_8VAQ/exec";
 
-    // Gửi lời chúc
-    form.addEventListener("submit", (e) => {
+    const form = document.getElementById('wishForm');
+    const messagesDiv = document.getElementById('messages');
+    const statusDiv = document.getElementById('status');
+    const errorDiv = document.getElementById('error');
+    const sendBtn = document.getElementById('sendBtn');
+
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const message = document.getElementById("message").value.trim();
-
+      errorDiv.textContent = '';
+      statusDiv.textContent = '';
+      const name = document.getElementById('name').value.trim();
+      const message = document.getElementById('message').value.trim();
       if (!name || !message) return;
 
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Đang gửi...';
+
+      const body = new URLSearchParams();
+      body.append('name', name);
+      body.append('message', message);
+
       fetch(scriptURL, {
-        method: "POST",
-        body: JSON.stringify({ name, message }),
-        headers: { "Content-Type": "application/json" }
+        method: 'POST',
+        body: body
       })
       .then(res => res.json())
-      .then(() => {
-        form.reset();
-        loadMessages();
+      .then(res => {
+        if (res && res.status === 'success') {
+          statusDiv.textContent = 'Gửi thành công ✅';
+          form.reset();
+          loadMessages();
+        } else {
+          errorDiv.textContent = 'Không nhận được phản hồi đúng từ server.';
+        }
       })
-      .catch(err => alert("❌ Lỗi khi gửi lời chúc: " + err));
+      .catch(err => {
+        console.error('POST error:', err);
+        errorDiv.textContent = 'Lỗi khi gửi lời chúc: ' + err;
+      })
+      .finally(() => {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Gửi lời chúc';
+      });
     });
 
-    // Tải lời chúc từ Google Sheet
     function loadMessages() {
+      errorDiv.textContent = '';
+      messagesDiv.textContent = '⏳ Đang tải lời chúc...';
       fetch(scriptURL)
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
         .then(data => {
-          messagesDiv.innerHTML = "";
-          data.reverse().forEach(row => {
-            const div = document.createElement("div");
-            div.className = "message";
-            div.innerHTML = `<strong>${row.name}</strong>: ${row.message}<br>
-                             <span class="time">${row.time}</span>`;
+          messagesDiv.innerHTML = '';
+          if (!Array.isArray(data) || data.length === 0) {
+            messagesDiv.textContent = 'Chưa có lời chúc nào.';
+            return;
+          }
+          data.reverse().forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'message';
+            div.innerHTML = `<strong>${escapeHtml(item.name)}</strong>: ${escapeHtml(item.message)}<span class="time">${item.time || ''}</span>`;
             messagesDiv.appendChild(div);
           });
         })
-        .catch(() => {
-          messagesDiv.innerHTML = "⚠️ Không tải được lời chúc!";
+        .catch(err => {
+          console.error('GET error:', err);
+          messagesDiv.textContent = '⚠️ Không tải được lời chúc!';
+          errorDiv.textContent = 'Lỗi khi lấy dữ liệu: ' + err;
         });
     }
 
-    // Tải ban đầu + auto refresh mỗi 10 giây
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
     loadMessages();
     setInterval(loadMessages, 10000);
   </script>
