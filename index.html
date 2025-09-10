@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Sổ Lời Chúc</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f6f2;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      color: #d6336c;
+    }
+    form {
+      margin: 20px auto;
+      max-width: 400px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    input, textarea, button {
+      width: 100%;
+      margin: 8px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      background: #d6336c;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #b52d59;
+    }
+    .message {
+      margin: 10px auto;
+      max-width: 500px;
+      text-align: left;
+      background: #fff;
+      padding: 12px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .message strong {
+      color: #d6336c;
+    }
+  </style>
+</head>
+<body>
+  <h1>💌 Sổ Lời Chúc</h1>
+  <form id="wishForm">
+    <input type="text" id="name" placeholder="Tên của bạn" required>
+    <textarea id="message" placeholder="Nhập lời chúc..." rows="3" required></textarea>
+    <button type="submit">Gửi lời chúc</button>
+  </form>
+
+  <h2>Lời chúc đã gửi:</h2>
+  <div id="messages"></div>
+
+  <script>
+    // Lưu lời chúc vào localStorage
+    const form = document.getElementById('wishForm');
+    const messagesDiv = document.getElementById('messages');
+
+    function loadMessages() {
+      messagesDiv.innerHTML = '';
+      const wishes = JSON.parse(localStorage.getItem('wishes') || '[]');
+      wishes.forEach(wish => {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.innerHTML = `<strong>${wish.name}</strong>: ${wish.message}`;
+        messagesDiv.prepend(div);
+      });
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const message = document.getElementById('message').value;
+
+      const wishes = JSON.parse(localStorage.getItem('wishes') || '[]');
+      wishes.push({ name, message });
+      localStorage.setItem('wishes', JSON.stringify(wishes));
+
+      form.reset();
+      loadMessages();
+    });
+
+    loadMessages();
+  </script>
+</body>
+</html>
