@@ -50,6 +50,10 @@
     .message strong {
       color: #d6336c;
     }
+    .time {
+      font-size: 12px;
+      color: gray;
+    }
   </style>
 </head>
 <body>
@@ -64,11 +68,11 @@
   <div id="messages">⏳ Đang tải lời chúc...</div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzcTfT53oXnG2nPDFAhD9yj11ZUU0Zc8haRUv47VVlKozOUxsTouyBVG_9t8sCxWNsv5A/exec";
+    const scriptURL = "YOUR_SCRIPT_URL"; // 👉 Thay bằng link Apps Script của bạn
     const form = document.getElementById("wishForm");
     const messagesDiv = document.getElementById("messages");
 
-    // Gửi lời chúc lên Google Sheet
+    // Gửi lời chúc
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const name = document.getElementById("name").value.trim();
@@ -86,7 +90,7 @@
         form.reset();
         loadMessages();
       })
-      .catch(err => alert("Lỗi khi gửi lời chúc: " + err));
+      .catch(err => alert("❌ Lỗi khi gửi lời chúc: " + err));
     });
 
     // Tải lời chúc từ Google Sheet
@@ -98,7 +102,8 @@
           data.reverse().forEach(row => {
             const div = document.createElement("div");
             div.className = "message";
-            div.innerHTML = `<strong>${row.name}</strong>: ${row.message}`;
+            div.innerHTML = `<strong>${row.name}</strong>: ${row.message}<br>
+                             <span class="time">${row.time}</span>`;
             messagesDiv.appendChild(div);
           });
         })
@@ -107,8 +112,9 @@
         });
     }
 
-    // Tải ban đầu
+    // Tải ban đầu + auto refresh mỗi 10 giây
     loadMessages();
+    setInterval(loadMessages, 10000);
   </script>
 </body>
 </html>
