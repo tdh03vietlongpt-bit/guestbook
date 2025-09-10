@@ -82,29 +82,30 @@
     });
 
     function loadMessages() {
-      errorDiv.textContent = '';
-      messagesDiv.textContent = '⏳ Đang tải lời chúc...';
       fetch(scriptURL)
         .then(res => {
           if (!res.ok) throw new Error('HTTP ' + res.status);
           return res.json();
         })
         .then(data => {
-          messagesDiv.innerHTML = '';
+          const tempDiv = document.createElement('div');
+
           if (!Array.isArray(data) || data.length === 0) {
-            messagesDiv.textContent = 'Chưa có lời chúc nào.';
-            return;
+            tempDiv.textContent = 'Chưa có lời chúc nào.';
+          } else {
+            data.reverse().forEach(item => {
+              const div = document.createElement('div');
+              div.className = 'message';
+              div.innerHTML = `<strong>${escapeHtml(item.name)}</strong>: ${escapeHtml(item.message)}<span class="time">${item.time || ''}</span>`;
+              tempDiv.appendChild(div);
+            });
           }
-          data.reverse().forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'message';
-            div.innerHTML = `<strong>${escapeHtml(item.name)}</strong>: ${escapeHtml(item.message)}<span class="time">${item.time || ''}</span>`;
-            messagesDiv.appendChild(div);
-          });
+
+          // chỉ thay thế khi dữ liệu mới đã sẵn sàng
+          messagesDiv.innerHTML = tempDiv.innerHTML;
         })
         .catch(err => {
           console.error('GET error:', err);
-          messagesDiv.textContent = '⚠️ Không tải được lời chúc!';
           errorDiv.textContent = 'Lỗi khi lấy dữ liệu: ' + err;
         });
     }
