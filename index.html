@@ -61,37 +61,53 @@
   </form>
 
   <h2>Lời chúc đã gửi:</h2>
-  <div id="messages"></div>
+  <div id="messages">⏳ Đang tải lời chúc...</div>
 
   <script>
-    // Lưu lời chúc vào localStorage
-    const form = document.getElementById('wishForm');
-    const messagesDiv = document.getElementById('messages');
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzcTfT53oXnG2nPDFAhD9yj11ZUU0Zc8haRUv47VVlKozOUxsTouyBVG_9t8sCxWNsv5A/exec";
+    const form = document.getElementById("wishForm");
+    const messagesDiv = document.getElementById("messages");
 
-    function loadMessages() {
-      messagesDiv.innerHTML = '';
-      const wishes = JSON.parse(localStorage.getItem('wishes') || '[]');
-      wishes.forEach(wish => {
-        const div = document.createElement('div');
-        div.className = 'message';
-        div.innerHTML = `<strong>${wish.name}</strong>: ${wish.message}`;
-        messagesDiv.prepend(div);
-      });
-    }
-
-    form.addEventListener('submit', (e) => {
+    // Gửi lời chúc lên Google Sheet
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const name = document.getElementById('name').value;
-      const message = document.getElementById('message').value;
+      const name = document.getElementById("name").value.trim();
+      const message = document.getElementById("message").value.trim();
 
-      const wishes = JSON.parse(localStorage.getItem('wishes') || '[]');
-      wishes.push({ name, message });
-      localStorage.setItem('wishes', JSON.stringify(wishes));
+      if (!name || !message) return;
 
-      form.reset();
-      loadMessages();
+      fetch(scriptURL, {
+        method: "POST",
+        body: JSON.stringify({ name, message }),
+        headers: { "Content-Type": "application/json" }
+      })
+      .then(res => res.json())
+      .then(() => {
+        form.reset();
+        loadMessages();
+      })
+      .catch(err => alert("Lỗi khi gửi lời chúc: " + err));
     });
 
+    // Tải lời chúc từ Google Sheet
+    function loadMessages() {
+      fetch(scriptURL)
+        .then(res => res.json())
+        .then(data => {
+          messagesDiv.innerHTML = "";
+          data.reverse().forEach(row => {
+            const div = document.createElement("div");
+            div.className = "message";
+            div.innerHTML = `<strong>${row.name}</strong>: ${row.message}`;
+            messagesDiv.appendChild(div);
+          });
+        })
+        .catch(() => {
+          messagesDiv.innerHTML = "⚠️ Không tải được lời chúc!";
+        });
+    }
+
+    // Tải ban đầu
     loadMessages();
   </script>
 </body>
